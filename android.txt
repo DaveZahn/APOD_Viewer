@@ -1,0 +1,7 @@
+title=APOD Viewer
+
+author=Esotic    
+
+orientation=landscape
+
+#fullscreen=1
