@@ -46,8 +46,11 @@ global bBindKeyboard
 global strFontSize
 global iCurrentIndex
 global iShownLength
+global intCharsPerLine
+global intLastX
+global intLastY
 #Device Independent (Default) Settings
-sngInterval = 5.002
+sngInterval = 6.002
 bBuildCache = True
 bReschedule = True # False
 bPaused = False
@@ -60,6 +63,8 @@ bBindKeyboard = True
 strFontSize = '24dp'
 iCurrentIndex = 0
 iShownLength = 0
+intLastX = 0
+intLastY = 0
 strDir = ""
 strTemp = ""
 strCache = ""
@@ -71,6 +76,9 @@ if os.path.isdir("C:\\Users\\Dave\\Pictures\\apod\\"):
     strTemp = "C:\\Users\\Dave\\Pictures\\Temp.jpg"
     strCache = "C:\\Users\\Dave\\Pictures\\apod\\cache\\"
     strData = "C:\\Users\\Dave\\Pictures\\apod\\data\\"
+    strFontSize = '24dp'
+    intCharsPerLine = 135 # 170 #rough estimate
+    sngInterval = 4.3
 #NookHD+
 if os.path.isdir('/mnt/ext_sdcard/Pictures/apod/'):
     strDir = '/mnt/ext_sdcard/Pictures/apod/'
@@ -137,32 +145,12 @@ class RootWidget(FloatLayout):
                 btn = child 
 
         if bShowInfo:
-            if False:
-                print "Showing Info..."
+            if bPlaying == True:
                 Clock.unschedule(self.next_image)
-                #bPaused = True
-                global strData
-                global strFileName
-                strTitle = strData + strFileName.replace('.jpg', '_Title.txt')
-                #load the btnText?
-                if (os.path.isdir(strData)) and (os.path.isfile(strTitle)):
-                    f = open(strData + strFileName.replace('.jpg', '_Title.txt'))
-                    strTitle = f.read()
-                    f.close
-                    f = open(strData + strFileName.replace('.jpg', '_Info.txt'))
-                    strInfo = f.read()
-                    f.close
-                    btn.text = strTitle + ': ' + strInfo                                        
-                if (not bPlaying) and bShowNext:
-                    print "calling next_image"
-                    self.next_image()
+                self.next_image()
             else:
-                if bPlaying == True:
-                    Clock.unschedule(self.next_image)
-                    self.next_image()
-                else:
-                    Clock.unschedule(self.next_image)
-                    self.show_current_image()
+                Clock.unschedule(self.next_image)
+                self.show_current_image()
         else:
             btn.text = ""
            
@@ -291,7 +279,7 @@ class RootWidget(FloatLayout):
                 strInfo = f.read()
                 f.close
                 #This is where we choose what to load into the button text when loading images
-                btn.text = strTitle + ': ' + strInfo
+                btn.text = strTitle + ': ' + strInfo # + ' [' + str(len(strTitle + strInfo) / intCharsPerLine) + '][' + strFileName + ']'
 
         img.source = self.shown[iCurrentIndex]
         if bReschedule and bPlaying:
@@ -355,7 +343,19 @@ class CustomBtn(ToggleButton):
                 print "button state = normal"
                 self.state = 'normal'
 
-            self.pressed = touch.pos
+            global intLastX
+            global intLastY
+            intX, intY = touch.pos
+            if (intX == intLastX) and (intY == intLastY):
+                if intX < Window.width:
+                    intX = intX + 1
+                else:
+                    intX = intX - 1
+        
+            intLastX = intX
+            intLastY = intY
+            
+            self.pressed = (intX, intY)
             #call Super to handle toggling the background_color
             #return super(CustomBtn, self).on_touch_down(touch)
             return False
